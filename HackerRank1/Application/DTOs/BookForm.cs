@@ -1,6 +1,6 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 
-namespace LibraryService.WebAPI.DTO
+namespace LibraryService.WebAPI.Application.DTOs
 {
     public class BookForm
     {
