@@ -1,8 +1,15 @@
 ﻿using LibraryService.WebAPI.Data;
-using LibraryService.WebAPI.Services;
+using LibraryService.WebAPI.Features.Books.CreateBook;
+using LibraryService.WebAPI.Features.Books.DeleteBook;
+using LibraryService.WebAPI.Features.Books.GetBooks;
+using LibraryService.WebAPI.Features.Books.UpdateBook;
+using LibraryService.WebAPI.Features.Libraries.CreateLibrary;
+using LibraryService.WebAPI.Features.Libraries.DeleteLibrary;
+using LibraryService.WebAPI.Features.Libraries.GetLibraries;
+using LibraryService.WebAPI.Features.Libraries.GetLibraryById;
+using LibraryService.WebAPI.Features.Libraries.UpdateLibrary;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,22 +30,35 @@ namespace LibraryService.WebAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            // Add support for Dependency Injection for internal services (BooksService and LibrariesService)
-            services.AddTransient<ILibrariesService,  LibrariesService>();
-            services.AddTransient<IBooksService,  BooksService>();
+            // Register the vertical slice feature handlers
+            services.AddTransient<GetLibrariesHandler>();
+            services.AddTransient<GetLibraryByIdHandler>();
+            services.AddTransient<CreateLibraryHandler>();
+            services.AddTransient<UpdateLibraryHandler>();
+            services.AddTransient<DeleteLibraryHandler>();
+            services.AddTransient<GetBooksHandler>();
+            services.AddTransient<CreateBookHandler>();
+            services.AddTransient<UpdateBookHandler>();
+            services.AddTransient<DeleteBookHandler>();
 
-            services.AddDbContext<LibraryContext>(options => options.UseInMemoryDatabase("librarydb"));
-            services.AddControllers();
+            services.AddDbContext<LibraryContext>(options =>
+                options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
+
+            services.AddControllers(options =>
+                options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
 
             // Add Swagger generation
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo
+                if (!c.SwaggerGeneratorOptions.SwaggerDocs.ContainsKey("v1"))
                 {
-                    Title = "LibraryService API",
-                    Version = "v1",
-                    Description = "A simple example ASP.NET Core Web API for LibraryService"
-                });
+                    c.SwaggerDoc("v1", new OpenApiInfo
+                    {
+                        Title = "LibraryService API",
+                        Version = "v1",
+                        Description = "A simple example ASP.NET Core Web API for LibraryService"
+                    });
+                }
             });
         }
 
@@ -48,7 +68,6 @@ namespace LibraryService.WebAPI
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-
 
                 // Enable middleware to serve generated Swagger as a JSON endpoint.
                 app.UseSwagger();
